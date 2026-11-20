@@ -65,22 +65,36 @@ void liberar_min_heap(MinHeap *h) {
 int dijkstra(GrafoListaPonderado *g, int origem, int *dist, int *pred) {
     int n = g->n;
 
-    // TODO 1: inicialize dist[i] = INFINITO_DIJKSTRA e pred[i] = -1 para todo i
-    // dist[origem] = 0
+    // TODO 1: inicializa tudo como "infinito" exceto a origem
+    for (int i = 0; i < n; i++) {
+        dist[i] = INFINITO_DIJKSTRA;
+        pred[i] = -1;
+    }
+    dist[origem] = 0;
 
     MinHeap *h = criar_min_heap(n);
-    // TODO 2: coloque todos os n vértices em h->dados[] (vertice=i, distancia=dist[i]),
-    // preencha h->posicao[i] = i, defina h->tamanho = n, e rode heap_sift_down
-    // de trás pra frente (igual fizemos no Prim) para transformar em heap válido
+
+    // TODO 2: coloca todos os vértices no heap e organiza (heapify)
+    for (int i = 0; i < n; i++) {
+        h->dados[i] = (NoHeap){i, dist[i]};
+        h->posicao[i] = i;
+    }
+    h->tamanho = n;
+    for (int i = n/2 - 1; i >= 0; i--) heap_sift_down(h, i);
 
     while (h->tamanho > 0) {
         NoHeap min = extrair_minimo(h);
         int u = min.vertice;
 
-        // TODO 3: para cada vizinho v de u (percorrendo g->adj[u]):
-        //   se dist[u] + peso < dist[v]:
-        //     atualize dist[v], pred[v] = u
-        //     chame diminuir_chave(h, v, dist[v])
+        // TODO 3: relaxa cada aresta (u -> v)
+        for (NoPonderado *atual = g->adj[u]; atual != NULL; atual = atual->prox) {
+            int v = atual->destino, peso = atual->peso;
+            if (dist[u] + peso < dist[v]) {
+                dist[v] = dist[u] + peso;
+                pred[v] = u;
+                diminuir_chave(h, v, dist[v]);
+            }
+        }
     }
 
     liberar_min_heap(h);
@@ -88,8 +102,23 @@ int dijkstra(GrafoListaPonderado *g, int origem, int *dist, int *pred) {
 }
 
 void reconstruir_caminho(int origem, int destino, int *pred) {
-    // TODO 4: a partir de 'destino', siga pred[] pra trás guardando cada vértice
-    // num array/pilha, até chegar em 'origem' (ou em -1, se não houver caminho).
-    // Depois imprima na ordem correta: origem -> ... -> destino
-    (void)origem; (void)destino; (void)pred;
+    if (destino != origem && pred[destino] == -1) {
+        printf("Nao ha caminho ate o vertice %d\n", destino);
+        return;
+    }
+
+    int caminho[1000], tamanho = 0;
+    int atual = destino;
+    while (atual != -1) {
+        caminho[tamanho++] = atual;
+        if (atual == origem) break;
+        atual = pred[atual];
+    }
+
+    printf("Caminho: ");
+    for (int i = tamanho - 1; i >= 0; i--) {
+        printf("%d", caminho[i]);
+        if (i > 0) printf(" -> ");
+    }
+    printf("\n");
 }
